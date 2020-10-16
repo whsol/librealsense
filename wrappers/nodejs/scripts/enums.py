@@ -77,7 +77,7 @@ def run(include_folder_path, addon_folder_path, js_file_path):
 
 
 if __name__ == '__main__':
-    (include_folder_path, addon_folder_path, js_file_path) = sys.argv[1:] + ['']
+    (include_folder_path, addon_folder_path, js_file_path) = sys.argv[1:]
 
     missed = run(include_folder_path, addon_folder_path, js_file_path)
     if missed:
