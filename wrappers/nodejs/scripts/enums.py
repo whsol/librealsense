@@ -68,6 +68,8 @@ if __name__ == '__main__':
     missed = run(args.include_folder_path, args.addon_folder_path)
 
     if missed:
-        sys.exit(missed if args.verbose else 1)
+        missed.sort()
+        message = "[ERROR] Node.js wrapper has missing enum values: %s" % (', '.join(missed))
+        sys.exit(message if args.verbose else 1)
 
     sys.exit()
