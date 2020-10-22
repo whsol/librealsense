@@ -14,10 +14,11 @@ static const int MAX_NUM_OF_DEPTH_RESOLUTIONS = 5;
 
 namespace librealsense
 {
-    const uint16_t L500_RECOVERY_PID    = 0x0b55;
-    const uint16_t L500_PID             = 0x0b0d;
-    const uint16_t L515_PID_PRE_PRQ     = 0x0b3d;
-    const uint16_t L515_PID             = 0x0b64;
+    const uint16_t L500_RECOVERY_PID            = 0x0b55;
+    const uint16_t L500_USB2_RECOVERY_PID_OLD   = 0x0adc; // Units with old DFU_PAYLAOD on USB2 report ds5 PID (RS_USB2_RECOVERY_PID)
+    const uint16_t L500_PID                     = 0x0b0d;
+    const uint16_t L515_PID_PRE_PRQ             = 0x0b3d;
+    const uint16_t L515_PID                     = 0x0b64;
 
     class l500_device;
 
@@ -87,6 +88,18 @@ namespace librealsense
         };
 #pragma pack(pop)
 
+        static std::vector< byte >
+        read_fw_table_raw( const hw_monitor & hwm, int table_id, hwmon_response & response )
+        {
+            std::vector< byte > res;
+            command cmd( fw_cmd::READ_TABLE, table_id );
+            auto data = hwm.send( cmd, &response );
+
+            res.assign( data.data(), data.data() + data.size() );
+
+            return res;
+        }
+
         // Read a table from firmware and, if FW says the table is empty, optionally initialize it
         // using your own code...
         template< typename T >
@@ -95,9 +108,8 @@ namespace librealsense
                             table_header * pheader = nullptr,
                             std::function< void() > init = nullptr )
         {
-            command cmd( fw_cmd::READ_TABLE, table_id );
             hwmon_response response;
-            std::vector<byte> data = hwm.send( cmd, &response );
+            std::vector< byte > data = read_fw_table_raw( hwm, table_id, response );
             size_t expected_size = sizeof( table_header ) + sizeof( T );
             switch( response )
             {
@@ -124,6 +136,7 @@ namespace librealsense
                 
             default:
                 LOG_DEBUG( "Failed to read FW table 0x" << std::hex << table_id );
+                command cmd( fw_cmd::READ_TABLE, table_id );
                 throw invalid_value_exception( hwmon_error_string( cmd, response ) );
             }
         }
@@ -232,10 +245,11 @@ namespace librealsense
         };
 
         static const std::map<std::uint16_t, std::string> rs500_sku_names = {
-            { L500_RECOVERY_PID,    "Intel RealSense L5xx Recovery"},
-            { L500_PID,             "Intel RealSense L500"},
-            { L515_PID_PRE_PRQ,     "Intel RealSense L515 (pre-PRQ)"},
-            { L515_PID,             "Intel RealSense L515"},
+            { L500_RECOVERY_PID,            "Intel RealSense L5xx Recovery"},
+            { L500_USB2_RECOVERY_PID_OLD,   "Intel RealSense L5xx Recovery"},
+            { L500_PID,                     "Intel RealSense L500"},
+            { L515_PID_PRE_PRQ,             "Intel RealSense L515 (pre-PRQ)"},
+            { L515_PID,                     "Intel RealSense L515"},
         };
 
         enum l500_notifications_types
@@ -270,10 +284,10 @@ namespace librealsense
             { temp_critical,                "Critical temperature reached" },
             { DFU_error,                    "DFU error" },
             { fall_detected,                "Fall detected stream stopped"  },
-            { ld_alarm,                     "Fatal error accrue (14)" },
-            { hard_error,                   "Fatal error accrue (15)" },
-            { ld_alarm_hard_error,          "Fatal error accrue (16)" },
-            { pzr_vbias_exceed_limit,       "Fatal error accrue (17)" },
+            { ld_alarm,                     "Fatal error occurred (14)" },
+            { hard_error,                   "Fatal error occurred (15)" },
+            { ld_alarm_hard_error,          "Fatal error occurred (16)" },
+            { pzr_vbias_exceed_limit,       "Fatal error occurred (17)" },
         };
 
 #pragma pack(push, 1)

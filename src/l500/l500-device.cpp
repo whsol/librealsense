@@ -221,8 +221,9 @@ namespace librealsense
                         get_depth_sensor().override_dsm_params( _autocal->get_dsm_params() );
                      
                         auto & color_sensor = *get_color_sensor();
-                        color_sensor.override_intrinsics( _autocal->get_intrinsics() );
+                        color_sensor.override_intrinsics( _autocal->get_raw_intrinsics() );
                         color_sensor.override_extrinsics( _autocal->get_extrinsics() );
+                        color_sensor.set_k_thermal_intrinsics(_autocal->get_thermal_intrinsics());
                     }
                     notify_of_calibration_change( status );
                 } );
@@ -399,8 +400,9 @@ namespace librealsense
             throw wrong_api_call_sequence_exception("_hw_monitor is not initialized yet");
 
         command cmd(ivcam2::fw_cmd::MRD, ivcam2::REGISTER_CLOCK_0, ivcam2::REGISTER_CLOCK_0 + 4);
-        // Redirect HW Monitor commands to used atomic (UVC) transfers for faster transactions and transfer integrity
-        auto res = _hw_monitor->send(cmd, nullptr, true);
+        // TODO -Redirect HW Monitor commands to used atomic (UVC) transfers for faster transactions and transfer integrity
+        // Disabled due to limitation in FW
+        auto res = _hw_monitor->send(cmd, nullptr);
 
         if (res.size() < sizeof(uint32_t))
         {
@@ -414,6 +416,9 @@ namespace librealsense
 
     void l500_device::enter_update_state() const
     {
+        // Stop all data streaming/exchange pipes with HW
+        stop_activity();
+
         try {
             LOG_INFO("entering to update state, device disconnect is expected");
             command cmd(ivcam2::DFU);
