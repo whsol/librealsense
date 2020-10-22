@@ -12,8 +12,8 @@ MODULEDIR="$WORKDIR/$RAWMODULEDIR"
 RSDIR="$MODULEDIR/librealsense"
 
 mkdir -p $RSDIR/wrappers
-rsync -a ../.. $RSDIR --exclude wrappers --exclude doc --exclude unit-tests --exclude build --exclude .git
-rsync -a . $MODULEDIR --exclude build --exclude dist --exclude node_modules
+rsync -a ../.. $RSDIR --exclude wrappers --exclude doc --exclude unit-tests --exclude build --exclude .git --exclude scripts --exclude examples
+rsync -a . $MODULEDIR --exclude build --exclude dist --exclude node_modules --exclude tools
 
 cp -f ../CMakeLists.txt $RSDIR/wrappers/
 cp -f scripts/npm_dist/binding.gyp $MODULEDIR
